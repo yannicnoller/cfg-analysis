@@ -10,7 +10,6 @@
 apply plugin: 'java-library'
 
 def version = '0.1'
-jar.archiveName = 'cfg-analysis.jar'
 
 // In this section you declare where to find the dependencies of your project
 repositories {
