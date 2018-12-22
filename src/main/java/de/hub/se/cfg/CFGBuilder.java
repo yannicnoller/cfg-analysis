@@ -278,9 +278,6 @@ public class CFGBuilder {
                 } else {
                     // Add to the call list
                     calls.add(ih);
-
-                    /* YN: TODO FIXME trying to also add calls as nodes */
-
                 }
             } else if (insn instanceof ReturnInstruction) {
                 ends.add(ih);

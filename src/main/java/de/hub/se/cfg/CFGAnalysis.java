@@ -119,6 +119,24 @@ public class CFGAnalysis implements Serializable {
         return callingNodes;
     }
 
+    public CFGNode getNodeByMethodAndSourceLine(String fullQualifiedMethodName, int sourceLineNumber,
+            boolean muteExceptionForUnknownMethod) {
+        CFG cfg = cfgMap.get(fullQualifiedMethodName);
+        if (cfg == null) {
+            if (muteExceptionForUnknownMethod) {
+                return null;
+            } else {
+                throw new RuntimeException("Unknown method: " + fullQualifiedMethodName);
+            }
+        }
+        Set<CFGNode> nodes = cfg.getNodesBySourceLineNumber(sourceLineNumber);
+        if (nodes == null || nodes.isEmpty()) {
+            throw new RuntimeException("Source line number " + sourceLineNumber + " not included in CFG for method "
+                    + fullQualifiedMethodName + " !");
+        }
+        return nodes.iterator().next();
+    }
+
     /**
      * Return the first CFG node, which is associated with the given sourceLineNumber;
      * 
@@ -129,16 +147,7 @@ public class CFGAnalysis implements Serializable {
      * @return CFGNode
      */
     public CFGNode getNodeByMethodAndSourceLine(String fullQualifiedMethodName, int sourceLineNumber) {
-        CFG cfg = cfgMap.get(fullQualifiedMethodName);
-        if (cfg == null) {
-            throw new RuntimeException("Unknown method: " + fullQualifiedMethodName);
-        }
-        Set<CFGNode> nodes = cfg.getNodesBySourceLineNumber(sourceLineNumber);
-        if (nodes == null || nodes.isEmpty()) {
-            throw new RuntimeException("Source line number " + sourceLineNumber + " not included in CFG for method "
-                    + fullQualifiedMethodName + " !");
-        }
-        return nodes.iterator().next();
+        return getNodeByMethodAndSourceLine(fullQualifiedMethodName, sourceLineNumber, false);
     }
 
 }
