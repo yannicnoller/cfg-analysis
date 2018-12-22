@@ -9,12 +9,18 @@
 // Apply the java-library plugin to add support for Java Library
 apply plugin: 'java-library'
 
+def version = '0.1'
+jar.archiveName = 'cfg-analysis.jar'
+
 // In this section you declare where to find the dependencies of your project
 repositories {
     // Use jcenter for resolving your dependencies.
     // You can declare any Maven/Ivy/file repository here.
     jcenter()
 }
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
 
 dependencies {
     // This dependency is exported to consumers, that is to say found on their compile classpath.
