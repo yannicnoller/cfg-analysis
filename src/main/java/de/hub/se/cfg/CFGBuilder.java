@@ -447,6 +447,7 @@ public class CFGBuilder {
                         System.out.println("Invoke instruction: " + methodClass + " " + invokeInstr.getMethodName(CPG));
                         System.out.println("Node id: " + nodeId);
                     }
+                    node.addCall(fullQualifiedMethodName);
                     cfg.addCall(nodeId, fullQualifiedMethodName);
                     break;
                 }

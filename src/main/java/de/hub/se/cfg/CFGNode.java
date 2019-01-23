@@ -37,6 +37,8 @@ public class CFGNode implements Serializable {
 
 	/* Maps target node id to distance. */
 	protected Map<Integer, Integer> distances = new HashMap<>();
+	
+	protected String callsMethod = null;
 
 	/*************************************************************************
 	 * Creates a new node.
@@ -177,7 +179,7 @@ public class CFGNode implements Serializable {
 				"[" + nodeId + ", [" + startOffset + ", " + endOffset + "], "
 						+ ((startSourceLineNumber == endSourceLineNumber) ? startSourceLineNumber
 								: (startSourceLineNumber + "-" + endSourceLineNumber))
-						+ "]" + (isVirtual() ? "v" : ""));
+						+ "]" + (isVirtual() ? "v" : "") + distances);
 	}
 
 	public void setSourceLineNumber(int startLineNumber, int endLineNumber) {
@@ -208,6 +210,18 @@ public class CFGNode implements Serializable {
 
 	public Integer getDistance(int targetNodeId) {
 		return distances.get(targetNodeId);
+	}
+	
+	public void addCall(String method) {
+	    this.callsMethod = method;
+	}
+	
+	public boolean isCallerNode() {
+	    return this.callsMethod != null;
+	}
+	
+	public String getMethodCalled() {
+	    return this.callsMethod;
 	}
 
 }

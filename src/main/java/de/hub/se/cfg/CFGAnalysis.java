@@ -21,7 +21,7 @@ public class CFGAnalysis implements Serializable {
     Map<String, CFG> cfgMap;
     Set<String> skippedFilesDuringAnalysis;
 
-    /* Maps method name to all nodes which these method. */
+    /* Maps method name to all nodes, which call this method. */
     Map<String, Set<CFGNode>> callerCache = new HashMap<>();
 
     Set<CFGTarget> targets;
@@ -62,41 +62,78 @@ public class CFGAnalysis implements Serializable {
             targetNode.setDistance(globalTargetNodeId, 0);
 
             /* Start calculation */
-            Set<CFGNode> toCheck = new HashSet<CFGNode>();
-            toCheck.add(targetNode);
-
-            while (!toCheck.isEmpty()) {
-                CFGNode currentNode = toCheck.iterator().next();
-                toCheck.remove(currentNode);
-
-                /* Get predecessor nodes for current node. */
-                Set<CFGNode> predecessorNodes;
-                if (currentNode.isRootNode) {
-                    predecessorNodes = getCallers(currentNode.getFullQualifiedMethodName());
-                } else {
-                    predecessorNodes = currentNode.getPredecessors();
-                }
-
-                int currentDistance = currentNode.getDistance(globalTargetNodeId);
-
-                /* Update predecessor nodes if necessary. */
-                for (CFGNode preNode : predecessorNodes) {
-                    int newDistance = currentDistance;
-                    if (currentNode.isRootNode || !preNode.isVirtual) {
-                        newDistance += 1;
-                    }
-                    boolean distanceUpdated = preNode.setDistanceIfBetter(globalTargetNodeId, newDistance);
-                    if (distanceUpdated) {
-                        toCheck.add(preNode);
-                    }
-                }
-            }
-
+            updateNodeAndAllPredecessorNodes(targetNode, globalTargetNodeId, true);
         }
-
     }
 
-    private Set<CFGNode> getCallers(String localTargetMethod) {
+    private int updateNodeAndAllPredecessorNodes(CFGNode node, int targetId, boolean includeMethodCallers) {
+        Set<CFGNode> toCheck = new HashSet<CFGNode>();
+        toCheck.add(node);
+        int lastDistance = node.getDistance(targetId);
+
+        while (!toCheck.isEmpty()) {
+            CFGNode currentNode = toCheck.iterator().next();
+            toCheck.remove(currentNode);
+
+            int currentDistance = currentNode.getDistance(targetId);
+            lastDistance = currentDistance;
+
+            /* Get predecessor nodes for current node. */
+            Set<CFGNode> predecessorNodes;
+            if (currentNode.isRootNode) {
+                if (includeMethodCallers) {
+                    predecessorNodes = getCallers(currentNode.getFullQualifiedMethodName());
+                } else {
+                    continue;
+                }
+            } else {
+                predecessorNodes = currentNode.getPredecessors();
+            }
+
+            /* Update predecessor nodes if necessary. */
+            for (CFGNode preNode : predecessorNodes) {
+                int newDistance = currentDistance;
+
+                /*
+                 * Check if pre-node calls another method. Then also update their distances. CAUTION: leads to
+                 * over-statement of reachability!. But do not update their distances if the preNode is the last real
+                 * node here, because then we would just get back from where we just have arrived from.
+                 * 
+                 * TODO YN: needs improvement, we want to be more precise!
+                 */
+                if (preNode.isCallerNode() && isNotLastNodeInMethod(preNode)) {
+                    String callingMethod = preNode.getMethodCalled();
+
+                    /*
+                     * Method must be included in analysis and it should not be the same method which we have currently
+                     * analyzed, otherwise we will receive wrong results.
+                     */
+                    if (isMethodIncludedInAnalysis(callingMethod)) {
+                        CFGNode lastNodeInCalledMethod = getLastNodeForMethod(callingMethod);
+
+                        // last node virtual, so use currentDistance and not newDistance
+                        boolean distanceUpdated = lastNodeInCalledMethod.setDistanceIfBetter(targetId, currentDistance);
+                        if (distanceUpdated) {
+                            newDistance = updateNodeAndAllPredecessorNodes(lastNodeInCalledMethod, targetId, false);
+                        }
+                    }
+                }
+
+                if (currentNode.isRootNode || !preNode.isVirtual) {
+                    newDistance += 1;
+                }
+
+                boolean distanceUpdated = preNode.setDistanceIfBetter(targetId, newDistance);
+                if (distanceUpdated) {
+                    toCheck.add(preNode);
+                }
+            }
+        }
+
+        return lastDistance;
+    }
+
+    public Set<CFGNode> getCallers(String localTargetMethod) {
         Set<CFGNode> callingNodes = callerCache.get(localTargetMethod);
         if (callingNodes == null) {
             callingNodes = new HashSet<>();
@@ -117,6 +154,22 @@ public class CFGAnalysis implements Serializable {
             }
         }
         return callingNodes;
+    }
+
+    public CFGNode getRootNodeForCurrentMethod(String fullQualifiedMethodName) {
+        CFG cfg = cfgMap.get(fullQualifiedMethodName);
+        if (cfg == null) {
+            throw new RuntimeException("Unknown method: " + fullQualifiedMethodName);
+        }
+        return cfg.getRootNode();
+    }
+
+    public CFGNode getLastNodeForMethod(String fullQualifiedMethodName) {
+        CFG cfg = cfgMap.get(fullQualifiedMethodName);
+        if (cfg == null) {
+            throw new RuntimeException("Unknown method: " + fullQualifiedMethodName);
+        }
+        return cfg.getExitNode();
     }
 
     public CFGNode getNodeByMethodAndSourceLine(String fullQualifiedMethodName, int sourceLineNumber,
@@ -148,6 +201,21 @@ public class CFGAnalysis implements Serializable {
      */
     public CFGNode getNodeByMethodAndSourceLine(String fullQualifiedMethodName, int sourceLineNumber) {
         return getNodeByMethodAndSourceLine(fullQualifiedMethodName, sourceLineNumber, false);
+    }
+
+    protected boolean isMethodIncludedInAnalysis(String fullQualifiedMethodName) {
+        return cfgMap.get(fullQualifiedMethodName) != null;
+    }
+
+    protected boolean isNotLastNodeInMethod(CFGNode node) {
+        CFG cfg = cfgMap.get(node.getFullQualifiedMethodName());
+        int lastNodeId;
+        if (node.isVirtual) {
+            lastNodeId = cfg.getExitNodeId();
+        } else {
+            lastNodeId = cfg.getLastRealNodeId();
+        }
+        return node.getId() != lastNodeId;
     }
 
 }
