@@ -90,7 +90,7 @@ public class CFG implements Serializable {
         while (lastNode.isVirtual) {
             Set<CFGNode> predessors = lastNode.getPredecessors();
             if (predessors.size() != 1) {
-                throw new RuntimeException("Virtual node has more than one predessor?!");
+                throw new RuntimeException("Virtual node has more than one predecessor?! size=" + predessors.size());
             }
             lastNode = predessors.iterator().next();
         }
