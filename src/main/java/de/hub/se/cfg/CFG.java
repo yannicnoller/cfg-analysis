@@ -85,16 +85,9 @@ public class CFG implements Serializable {
         return exitNode;
     }
 
-    protected int getLastRealNodeId() {
-        CFGNode lastNode = nodes.get(nodes.size() - 1);
-        while (lastNode.isVirtual) {
-            Set<CFGNode> predessors = lastNode.getPredecessors();
-            if (predessors.size() != 1) {
-                throw new RuntimeException("Virtual node has more than one predecessor?! size=" + predessors.size());
-            }
-            lastNode = predessors.iterator().next();
-        }
-        return lastNode.getId();
+    protected Set<CFGNode> getLastRealNodeIds() {
+        CFGNode lastNode = getExitNode();
+        return lastNode.getPredecessors();
     }
 
     protected void removeNode(CFGNode n) {

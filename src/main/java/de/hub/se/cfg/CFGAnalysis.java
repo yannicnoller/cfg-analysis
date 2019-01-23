@@ -209,13 +209,21 @@ public class CFGAnalysis implements Serializable {
 
     protected boolean isNotLastNodeInMethod(CFGNode node) {
         CFG cfg = cfgMap.get(node.getFullQualifiedMethodName());
-        int lastNodeId;
         if (node.isVirtual) {
-            lastNodeId = cfg.getExitNodeId();
+            return node.getId() != cfg.getExitNodeId();
         } else {
-            lastNodeId = cfg.getLastRealNodeId();
+            Set<CFGNode> lastNodes = cfg.getLastRealNodeIds();
+            if (lastNodes.isEmpty()) {
+                throw new RuntimeException("No real last nodes in CFG?!");
+            }
+            for (CFGNode lastNode : lastNodes) {
+                if (node.getId() == lastNode.getId()) {
+                    return false;
+                }
+            }
+            return true;
         }
-        return node.getId() != lastNodeId;
+       
     }
 
 }
