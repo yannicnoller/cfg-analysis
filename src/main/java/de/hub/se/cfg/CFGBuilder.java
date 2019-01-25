@@ -2,6 +2,7 @@ package de.hub.se.cfg;
 
 import java.io.*;
 import java.util.*;
+import java.util.Map.Entry;
 
 import org.apache.bcel.Repository;
 import org.apache.bcel.generic.*;
@@ -72,9 +73,10 @@ public class CFGBuilder {
         this.className = javaClass.getClassName();
         CPG = new ConstantPoolGen(javaClass.getConstantPool());
         methods = javaClass.getMethods();
-        if (methods.length == 0) {
-            throw new Exception("Error loading class");
-        }
+//        if (methods.length == 0) {
+//            throw new Exception("Error loading class");
+//        }
+        // TODO YN: a class does not need methods?!s
 
         return true;
     }
@@ -93,7 +95,6 @@ public class CFGBuilder {
             return null;
         }
         reset();
-
         this.mg = new MethodGen(methods[methodIndex], className, CPG);
         String completeMethodName = CFGUtility.getCompleteMethodName(className, methods[methodIndex]);
         return completeMethodName;
@@ -490,14 +491,13 @@ public class CFGBuilder {
      * @param classes
      * @return Map<String, CFG>, mapping between method name and generated CFG.
      */
-    public static CFGAnalysis genCFGForClasses(String path, Set<String> classes, Set<String> classesToSkip,
+    public static CFGAnalysis genCFGForClasses(/* String path, */Set<String> classes, Set<String> classesToSkip,
             String additionalClasses) {
         Map<String, CFG> map = new HashMap<>();
         Set<String> skipped = new HashSet<>();
         CFGBuilder cfgb = new CFGBuilder();
 
         for (String entry : classes) {
-
             if (classesToSkip.contains(entry)) {
                 System.out.println("Skip CFG construction for class: " + entry);
                 continue;
@@ -505,7 +505,7 @@ public class CFGBuilder {
 
             boolean parsed = false;
             try {
-                parsed = cfgb.parseClass(path + "/" + entry);
+                parsed = cfgb.parseClass(/* path + "/" + */entry);
             } catch (Exception e) {
                 e.printStackTrace();
                 System.exit(1);
