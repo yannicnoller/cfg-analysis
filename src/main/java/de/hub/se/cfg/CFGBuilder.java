@@ -2,7 +2,6 @@ package de.hub.se.cfg;
 
 import java.io.*;
 import java.util.*;
-import java.util.Map.Entry;
 
 import org.apache.bcel.Repository;
 import org.apache.bcel.generic.*;
@@ -52,7 +51,7 @@ public class CFGBuilder {
      * @return true for successful parsing, otherwise false
      * @throws Exception
      */
-    public boolean parseClass(String className) throws Exception {
+    public boolean parseClass(String className, Set<String> skipped) throws Exception {
         try {
             javaClass = Repository.lookupClass(className);
         } catch (ClassNotFoundException e) {
@@ -67,15 +66,16 @@ public class CFGBuilder {
         if (javaClass.isInterface()) {
             // throw new Exception("Cannot build graphs " + "for interface");
             System.out.println("We cannot build CFG for interface: " + javaClass.getClassName());
+            skipped.add(javaClass.getClassName());
             return false;
         }
 
         this.className = javaClass.getClassName();
         CPG = new ConstantPoolGen(javaClass.getConstantPool());
         methods = javaClass.getMethods();
-//        if (methods.length == 0) {
-//            throw new Exception("Error loading class");
-//        }
+        // if (methods.length == 0) {
+        // throw new Exception("Error loading class");
+        // }
         // TODO YN: a class does not need methods?!s
 
         return true;
@@ -505,16 +505,16 @@ public class CFGBuilder {
 
             boolean parsed = false;
             try {
-                parsed = cfgb.parseClass(/* path + "/" + */entry);
+                parsed = cfgb.parseClass(/* path + "/" + */entry, skipped);
             } catch (Exception e) {
                 e.printStackTrace();
                 System.exit(1);
             }
 
-            /* Skip class files that could be parsed, e.g. interface. */
+            /* Skip class files that could not be parsed, e.g. interface. */
             if (!parsed) {
                 /* Remove ".class" at the end of the filename and replace "/" with "." */
-                skipped.add(entry.substring(0, entry.length() - 6).replace("/", "."));
+                // skipped.add(entry.substring(0, entry.length() - 6).replace("/", "."));
                 continue;
             }
 
@@ -532,7 +532,7 @@ public class CFGBuilder {
             for (String additionalClass : additionalClasses.split(",")) {
                 boolean parsed = false;
                 try {
-                    parsed = cfgb.parseClass(additionalClass);
+                    parsed = cfgb.parseClass(additionalClass, skipped);
                 } catch (Exception e) {
                     e.printStackTrace();
                     System.exit(1);
@@ -541,8 +541,8 @@ public class CFGBuilder {
                 /* Skip class files that could not be parsed, e.g. interface. */
                 if (!parsed) {
                     /* Remove ".class" at the end of the filename and replace "/" with "." */
-                    skipped.add(additionalClass.substring(additionalClass.lastIndexOf("/") + 1,
-                            additionalClass.length() - 6));
+                    // skipped.add(additionalClass.substring(additionalClass.lastIndexOf("/") + 1,
+                    // additionalClass.length() - 6));
                     continue;
                 }
 
