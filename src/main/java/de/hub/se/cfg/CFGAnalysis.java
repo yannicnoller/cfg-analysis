@@ -184,8 +184,9 @@ public class CFGAnalysis implements Serializable {
         }
         Set<CFGNode> nodes = cfg.getNodesBySourceLineNumber(sourceLineNumber);
         if (nodes == null || nodes.isEmpty()) {
-            throw new RuntimeException("Source line number " + sourceLineNumber + " not included in CFG for method "
-                    + fullQualifiedMethodName + " !");
+            // throw new RuntimeException("Source line number " + sourceLineNumber + " not included in CFG for method "
+            // + fullQualifiedMethodName + " !");
+            return null;
         }
         return nodes.iterator().next();
     }
@@ -223,7 +224,7 @@ public class CFGAnalysis implements Serializable {
             }
             return true;
         }
-       
+
     }
 
 }
