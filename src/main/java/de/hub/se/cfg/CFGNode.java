@@ -38,7 +38,7 @@ public class CFGNode implements Serializable {
 	/* Maps target node id to distance. */
 	protected Map<Integer, Integer> distances = new HashMap<>();
 	
-	protected String callsMethod = null;
+	protected Set<String> callsMethod = new HashSet<>();
 
 	/*************************************************************************
 	 * Creates a new node.
@@ -213,14 +213,14 @@ public class CFGNode implements Serializable {
 	}
 	
 	public void addCall(String method) {
-	    this.callsMethod = method;
+	    this.callsMethod.add(method);
 	}
 	
 	public boolean isCallerNode() {
 	    return this.callsMethod != null;
 	}
 	
-	public String getMethodCalled() {
+	public Set<String> getMethodsCalled() {
 	    return this.callsMethod;
 	}
 

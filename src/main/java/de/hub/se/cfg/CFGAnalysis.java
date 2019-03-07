@@ -74,9 +74,9 @@ public class CFGAnalysis implements Serializable {
         while (!toCheck.isEmpty()) {
             CFGNode currentNode = toCheck.iterator().next();
             toCheck.remove(currentNode);
-
+            
             int currentDistance = currentNode.getDistance(targetId);
-            lastDistance = currentDistance;
+            lastDistance = currentDistance; 
 
             /* Get predecessor nodes for current node. */
             Set<CFGNode> predecessorNodes;
@@ -93,7 +93,7 @@ public class CFGAnalysis implements Serializable {
             /* Update predecessor nodes if necessary. */
             for (CFGNode preNode : predecessorNodes) {
                 int newDistance = currentDistance;
-
+                
                 /*
                  * Check if pre-node calls another method. Then also update their distances. CAUTION: leads to
                  * over-statement of reachability!. But do not update their distances if the preNode is the last real
@@ -101,20 +101,26 @@ public class CFGAnalysis implements Serializable {
                  * 
                  * TODO YN: needs improvement, we want to be more precise!
                  */
-                if (preNode.isCallerNode() && isNotLastNodeInMethod(preNode)) {
-                    String callingMethod = preNode.getMethodCalled();
+                if (preNode.isCallerNode()) {
 
-                    /*
-                     * Method must be included in analysis and it should not be the same method which we have currently
-                     * analyzed, otherwise we will receive wrong results.
-                     */
-                    if (isMethodIncludedInAnalysis(callingMethod)) {
-                        CFGNode lastNodeInCalledMethod = getLastNodeForMethod(callingMethod);
+                    Set<String> methodsCalledByPreNode = preNode.getMethodsCalled();
+                    if (!isNotLastNodeInMethod(preNode)) {
+                        methodsCalledByPreNode.remove(currentNode.getFullQualifiedMethodName());    
+                    }
+                    
+                    for (String callingMethod : methodsCalledByPreNode) {
+                        /*
+                         * Method must be included in analysis and it should not be the same method which we have currently
+                         * analyzed, otherwise we will receive wrong results.
+                         */
+                        if (isMethodIncludedInAnalysis(callingMethod)) {
+                            CFGNode lastNodeInCalledMethod = getLastNodeForMethod(callingMethod);
 
-                        // last node virtual, so use currentDistance and not newDistance
-                        boolean distanceUpdated = lastNodeInCalledMethod.setDistanceIfBetter(targetId, currentDistance);
-                        if (distanceUpdated) {
-                            newDistance = updateNodeAndAllPredecessorNodes(lastNodeInCalledMethod, targetId, false);
+                            // last node virtual, so use currentDistance and not newDistance
+                            boolean distanceUpdated = lastNodeInCalledMethod.setDistanceIfBetter(targetId, currentDistance);
+                            if (distanceUpdated) {
+                                newDistance = updateNodeAndAllPredecessorNodes(lastNodeInCalledMethod, targetId, false);
+                            }
                         }
                     }
                 }
